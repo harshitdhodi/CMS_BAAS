@@ -81,7 +81,7 @@ export function Sidebar() {
               return (
                 <Link
                   key={c.id}
-                  href={`/collections/${c.id}`}
+                  href={`/collections/${c.id}?collectionName=${c.name}`}
                   className={cn(
                     'group flex items-center justify-between rounded-lg transition-all duration-200',
                     isOpen ? 'px-3 py-2.5 gap-2' : 'px-3 py-2.5 justify-center',

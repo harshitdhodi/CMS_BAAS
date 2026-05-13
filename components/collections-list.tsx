@@ -154,7 +154,7 @@ export function CollectionsList({ collections: initialCollections = [], isLoadin
             </div>
           </CardContent>
           <div className="border-t p-3 flex gap-2">
-            <Link href={`/collections/${collection.id}`} className="flex-1">
+            <Link href={`/collections/${collection.id}?collectionName=${collection.name}`} className="flex-1">
               <Button variant="default" size="sm" className="w-full justify-between">
                 Open
                 <ChevronRight className="w-4 h-4" />

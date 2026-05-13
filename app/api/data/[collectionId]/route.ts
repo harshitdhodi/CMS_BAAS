@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createRecord, getCollectionFields, getRecords } from '@/lib/db';
+import { createRecord, getCollectionFields, getRecords, getCollection, getCollectionByName } from '@/lib/db';
 import { requireAuth } from '@/lib/auth';
 import type { ApiResponse } from '@/lib/types';
+import { ObjectId } from 'mongodb';
 
 export async function GET(
   request: NextRequest,
@@ -10,7 +11,33 @@ export async function GET(
   try {
     await requireAuth();
     const { collectionId } = await params;
-    const { data, error } = await getRecords(collectionId);
+
+    // Resolve collection name: if it's an ObjectId, get the collection by ID to get its name
+    let collectionName = collectionId;
+    let actualCollectionId = collectionId;
+    if (ObjectId.isValid(collectionId)) {
+      const { data: collection } = await getCollection(collectionId);
+      if (!collection) {
+        return NextResponse.json(
+          { success: false, error: 'Collection not found' } as ApiResponse<null>,
+          { status: 404 }
+        );
+      }
+      collectionName = collection.name;
+      actualCollectionId = collection.id;
+    } else {
+      // If it's not an ObjectId, try to get by name to get the ID
+      const { data: collection } = await getCollectionByName(collectionId);
+      if (!collection) {
+        return NextResponse.json(
+          { success: false, error: 'Collection not found' } as ApiResponse<null>,
+          { status: 404 }
+        );
+      }
+      actualCollectionId = collection.id;
+    }
+
+    const { data, error } = await getRecords(collectionName);
     if (error) {
       return NextResponse.json(
         { success: false, error: 'Failed to fetch records' } as ApiResponse<null>,
@@ -39,8 +66,33 @@ export async function POST(
     const { collectionId } = await params;
     const payload = await request.json();
 
+    // Resolve collection name: if it's an ObjectId, get the collection by ID to get its name
+    let collectionName = collectionId;
+    let actualCollectionId = collectionId;
+    if (ObjectId.isValid(collectionId)) {
+      const { data: collection } = await getCollection(collectionId);
+      if (!collection) {
+        return NextResponse.json(
+          { success: false, error: 'Collection not found' } as ApiResponse<null>,
+          { status: 404 }
+        );
+      }
+      collectionName = collection.name;
+      actualCollectionId = collection.id;
+    } else {
+      // If it's not an ObjectId, try to get by name to get the ID
+      const { data: collection } = await getCollectionByName(collectionId);
+      if (!collection) {
+        return NextResponse.json(
+          { success: false, error: 'Collection not found' } as ApiResponse<null>,
+          { status: 404 }
+        );
+      }
+      actualCollectionId = collection.id;
+    }
+
     // Basic required check against field definitions
-    const { data: fields } = await getCollectionFields(collectionId);
+    const { data: fields } = await getCollectionFields(actualCollectionId);
     if (fields) {
       for (const f of fields) {
         if (!f.is_required) continue;
@@ -62,7 +114,7 @@ export async function POST(
       }
     }
 
-    const { data, error } = await createRecord(collectionId, payload);
+    const { data, error } = await createRecord(collectionName, payload);
     if (error) {
       return NextResponse.json(
         { success: false, error: 'Failed to create record' } as ApiResponse<null>,

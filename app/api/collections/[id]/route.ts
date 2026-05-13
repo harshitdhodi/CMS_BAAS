@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
   getCollection,
+  getCollectionByName,
   updateCollection,
   deleteCollection,
 } from '@/lib/db';
 import { requireRole } from '@/lib/auth';
 import type { ApiResponse } from '@/lib/types';
+import { ObjectId } from 'mongodb';
 
 export async function GET(
   request: NextRequest,
@@ -13,7 +15,21 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const { data, error } = await getCollection(id);
+    let data, error;
+
+    // Try to get by ID first if it's a valid ObjectId
+    if (ObjectId.isValid(id)) {
+      const result = await getCollection(id);
+      data = result.data;
+      error = result.error;
+    }
+
+    // If not found by ID or invalid ObjectId, try by name
+    if (!data && !error) {
+      const result = await getCollectionByName(id);
+      data = result.data;
+      error = result.error;
+    }
 
     if (error || !data) {
       return NextResponse.json(

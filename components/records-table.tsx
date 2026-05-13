@@ -10,9 +10,9 @@ import type { Field } from '@/lib/types';
 
 type RecordRow = {
   id: string;
-  data: Record<string, any>;
   created_at?: string;
   updated_at?: string;
+  [key: string]: any;
 };
 
 type Props = {
@@ -23,6 +23,7 @@ type Props = {
 };
 
 export function RecordsTable({ collectionId, fields, records, onDelete }: Props) {
+  console.log("records",records)
   const { toast } = useToast();
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -72,7 +73,7 @@ export function RecordsTable({ collectionId, fields, records, onDelete }: Props)
                 <TableRow key={r.id}>
                   {fields.map((f) => (
                     <TableCell key={f.id}>
-                      {formatValue(r.data?.[f.name], f.field_type)}
+                      {formatValue(r[f.name], f.field_type)}
                     </TableCell>
                   ))}
                   <TableCell>
@@ -136,4 +137,3 @@ function formatValue(value: any, fieldType: string) {
       return String(value);
   }
 }
-

@@ -53,6 +53,20 @@ export async function getCollections() {
   }
 }
 
+// Get single collection by its name
+export async function getCollectionByName(name: string) {
+  try {
+    const db = await getDb();
+    const collectionsCol = db.collection<Omit<Collection, 'id'> & { _id: ObjectId }>('collections');
+    const doc = await collectionsCol.findOne({ name });
+    if (!doc) return { data: null, error: null as null };
+    return { data: normalizeDocId(doc) as unknown as Collection, error: null as null };
+  } catch (error) {
+    console.error('Error fetching collection by name:', error);
+    return { data: null, error };
+  }
+}
+
 // Get single collection with fields
 export async function getCollection(id: string) {
   try {
@@ -336,90 +350,73 @@ export async function reorderFields(fields: Array<{ id: string; field_order: num
 
 // ----- Records (dynamic data) -----
 
-type RecordDoc = {
-  _id: ObjectId;
-  collection_id: string;
-  data: Record<string, unknown>;
-  created_at: string;
-  updated_at: string;
-};
-
-export async function getRecords(collectionId: string, limit = 100) {
+export async function getRecords(collectionName: string, limit = 100) {
   try {
     const db = await getDb();
-    const recordsCol = db.collection<RecordDoc>('records');
-    const docs = await recordsCol
-      .find({ collection_id: collectionId })
+    const docs = await db.collection(collectionName)
+      .find({})
       .sort({ created_at: -1 })
       .limit(limit)
       .toArray();
-    const data = docs.map((d) => normalizeDocId(d) as unknown as Record<string, unknown>);
+    const data = docs.map((d) => normalizeDocId(d as any));
     return { data, error: null as null };
   } catch (error) {
-    console.error('Error fetching records:', error);
+    console.error(`Error fetching records from ${collectionName}:`, error);
     return { data: null, error };
   }
 }
 
-export async function createRecord(collectionId: string, data: Record<string, unknown>) {
+export async function createRecord(collectionName: string, data: Record<string, unknown>) {
   try {
     const db = await getDb();
-    const recordsCol = db.collection('records');
     const timestamp = nowIso();
     const insertDoc = {
-      collection_id: collectionId,
-      data,
+      ...data,
       created_at: timestamp,
       updated_at: timestamp,
     };
-    const result = await recordsCol.insertOne(insertDoc);
+    const result = await db.collection(collectionName).insertOne(insertDoc);
     return {
       data: { id: result.insertedId.toString(), ...insertDoc },
       error: null as null,
     };
   } catch (error) {
-    console.error('Error creating record:', error);
+    console.error(`Error creating record in ${collectionName}:`, error);
     return { data: null, error };
   }
 }
 
 export async function updateRecord(
-  collectionId: string,
+  collectionName: string,
   recordId: string,
   data: Record<string, unknown>
 ) {
   try {
     const _id = oid(recordId);
     if (!_id) return { data: null, error: new Error('Invalid record id') };
-
     const db = await getDb();
-    const recordsCol = db.collection('records');
-
-    const result = await recordsCol.findOneAndUpdate(
-      { _id, collection_id: collectionId },
-      { $set: { data, updated_at: nowIso() } },
+    const result = await db.collection(collectionName).findOneAndUpdate(
+      { _id },
+      { $set: { ...data, updated_at: nowIso() } },
       { returnDocument: 'after' }
     );
-
     if (!result) return { data: null, error: null as null };
     return { data: normalizeDocId(result as any), error: null as null };
   } catch (error) {
-    console.error('Error updating record:', error);
+    console.error(`Error updating record in ${collectionName}:`, error);
     return { data: null, error };
   }
 }
 
-export async function deleteRecord(collectionId: string, recordId: string) {
+export async function deleteRecord(collectionName: string, recordId: string) {
   try {
     const _id = oid(recordId);
     if (!_id) return { error: new Error('Invalid record id') };
-
     const db = await getDb();
-    const recordsCol = db.collection('records');
-    await recordsCol.deleteOne({ _id, collection_id: collectionId });
+    await db.collection(collectionName).deleteOne({ _id });
     return { error: null as null };
   } catch (error) {
-    console.error('Error deleting record:', error);
+    console.error(`Error deleting record in ${collectionName}:`, error);
     return { error };
   }
 }
@@ -505,4 +502,3 @@ export async function getUserById(id: string) {
     return { data: null, error };
   }
 }
-

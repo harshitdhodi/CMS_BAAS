@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
   getCollectionFields,
+  getCollectionByName,
   createField,
   reorderFields,
 } from '@/lib/db';
 import { requireRole } from '@/lib/auth';
 import type { ApiResponse, CreateFieldRequest } from '@/lib/types';
+import { ObjectId } from 'mongodb';
 
 export async function GET(request: NextRequest) {
   try {
@@ -18,7 +20,20 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const { data, error } = await getCollectionFields(collectionId);
+    // If collectionId is not a valid ObjectId, try to resolve it by name
+    let actualCollectionId = collectionId;
+    if (!ObjectId.isValid(collectionId)) {
+      const collectionResult = await getCollectionByName(collectionId);
+      if (!collectionResult.data) {
+        return NextResponse.json(
+          { success: false, error: 'Collection not found' } as ApiResponse<null>,
+          { status: 404 }
+        );
+      }
+      actualCollectionId = collectionResult.data.id;
+    }
+
+    const { data, error } = await getCollectionFields(actualCollectionId);
 
     if (error) {
       return NextResponse.json(

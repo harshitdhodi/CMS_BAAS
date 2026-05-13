@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { CreateFieldDialog } from '@/components/create-field-dialog';
@@ -20,15 +20,18 @@ import type { Collection, Field } from '@/lib/types';
 export default function CollectionDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const { user, loading: authLoading, isSuperadmin } = useAuth();
   const collectionId = params.id as string;
+  const collectionName = searchParams.get('collectionName') || '';
+  const resolvedId = collectionName || collectionId;
 
   const [collection, setCollection] = useState<Collection | null>(null);
   const [fields, setFields] = useState<Field[]>([]);
   const [loading, setLoading] = useState(true);
   const [fieldRefresh, setFieldRefresh] = useState(0);
-  const [records, setRecords] = useState<Array<{ id: string; data: Record<string, unknown> }>>([]);
+  const [records, setRecords] = useState<Array<Record<string, any>>>([]);
   const [recordRefresh, setRecordRefresh] = useState(0);
   const [editingField, setEditingField] = useState<Field | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -43,15 +46,15 @@ export default function CollectionDetailPage() {
       fetchCollection();
       fetchFields();
     }
-  }, [collectionId, fieldRefresh, user, authLoading, router]);
+  }, [resolvedId, fieldRefresh, user, authLoading, router]);
 
   useEffect(() => {
     fetchRecords();
-  }, [collectionId, recordRefresh]);
+  }, [resolvedId, recordRefresh]);
 
   async function fetchCollection() {
     try {
-      const response = await fetch(`/api/collections/${collectionId}`);
+      const response = await fetch(`/api/collections/${resolvedId}`);
       const result = await response.json();
 
       if (result.success) {
@@ -92,7 +95,7 @@ export default function CollectionDetailPage() {
 
   async function fetchRecords() {
     try {
-      const res = await fetch(`/api/data/${collectionId}`);
+      const res = await fetch(`/api/data/${resolvedId}`);
       const json = await res.json();
       if (json.success) {
         setRecords(json.data || []);

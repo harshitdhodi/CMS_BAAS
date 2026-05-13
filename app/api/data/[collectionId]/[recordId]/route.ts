@@ -1,7 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { deleteRecord, updateRecord } from '@/lib/db';
+import { deleteRecord, updateRecord, getCollection, getCollectionByName } from '@/lib/db';
 import { requireAuth } from '@/lib/auth';
 import type { ApiResponse } from '@/lib/types';
+import { ObjectId } from 'mongodb';
+
+async function resolveCollectionName(collectionId: string): Promise<{ collectionName: string; error?: string }> {
+  let collectionName = collectionId;
+  if (ObjectId.isValid(collectionId)) {
+    const { data: collection } = await getCollection(collectionId);
+    if (!collection) {
+      return { collectionName: '', error: 'Collection not found' };
+    }
+    collectionName = collection.name;
+  } else {
+    const { data: collection } = await getCollectionByName(collectionId);
+    if (!collection) {
+      return { collectionName: '', error: 'Collection not found' };
+    }
+  }
+  return { collectionName };
+}
 
 export async function PATCH(
   request: NextRequest,
@@ -11,8 +29,17 @@ export async function PATCH(
     await requireAuth();
     const { collectionId, recordId } = await params;
     const payload = await request.json();
-    const { data, error } = await updateRecord(collectionId, recordId, payload);
+
+    const { collectionName, error } = await resolveCollectionName(collectionId);
     if (error) {
+      return NextResponse.json(
+        { success: false, error } as ApiResponse<null>,
+        { status: 404 }
+      );
+    }
+
+    const { data, error: updateError } = await updateRecord(collectionName, recordId, payload);
+    if (updateError) {
       return NextResponse.json(
         { success: false, error: 'Failed to update record' } as ApiResponse<null>,
         { status: 500 }
@@ -38,8 +65,17 @@ export async function DELETE(
   try {
     await requireAuth();
     const { collectionId, recordId } = await params;
-    const { error } = await deleteRecord(collectionId, recordId);
+
+    const { collectionName, error } = await resolveCollectionName(collectionId);
     if (error) {
+      return NextResponse.json(
+        { success: false, error } as ApiResponse<null>,
+        { status: 404 }
+      );
+    }
+
+    const { error: deleteError } = await deleteRecord(collectionName, recordId);
+    if (deleteError) {
       return NextResponse.json(
         { success: false, error: 'Failed to delete record' } as ApiResponse<null>,
         { status: 500 }
