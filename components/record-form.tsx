@@ -13,6 +13,14 @@ import { HierarchicalSelector } from '@/components/hierarchical-selector';
 import { Plus, Trash2 } from 'lucide-react';
 import type { Field } from '@/lib/types';
 
+const slugify = (str: string) =>
+  str
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/[\s_-]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
 type Props = {
   collectionId: string;
   fields: Field[];
@@ -26,7 +34,15 @@ export function RecordForm({ collectionId, fields, onCreated }: Props) {
   const [formKey, setFormKey] = useState(0);
 
   function updateField(name: string, value: any) {
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => {
+      const next = { ...prev, [name]: value };
+      
+      // Auto-generate slug if it exists in fields and source is a "name" field
+      if (['name', 'title', 'display_name', 'category'].includes(name) && fields.some(f => f.name === 'slug')) {
+        next['slug'] = slugify(String(value));
+      }
+      return next;
+    });
   }
 
   async function handleSubmit(e: React.FormEvent) {

@@ -25,6 +25,14 @@ import { TipTapEditor } from './tiptap-editor';
 import { Eye, Pencil, Trash2, Columns3, X, Save } from 'lucide-react';
 import type { Field } from '@/lib/types';
 
+const slugify = (str: string) =>
+  str
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/[\s_-]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
 type RecordRow = {
   id: string;
   created_at?: string;
@@ -129,7 +137,16 @@ export function RecordsTable({
   // ── Edit Field Renderer ──
   function renderEditField(field: Field) {
     const value = editData[field.name];
-    const setValue = (v: any) => setEditData((prev) => ({ ...prev, [field.name]: v }));
+    const setValue = (v: any) => setEditData((prev) => {
+      const next = { ...prev, [field.name]: v };
+
+      // Auto-generate slug if it exists in fields and source is a "name" field
+      if (['name', 'title', 'display_name', 'category'].includes(field.name) && fields.some(f => f.name === 'slug')) {
+        next['slug'] = slugify(String(v));
+      }
+
+      return next;
+    });
 
     switch (field.field_type) {
       case 'Boolean':
