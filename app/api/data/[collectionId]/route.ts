@@ -21,11 +21,11 @@ export async function GET(
     const { collectionId } = await params;
 
     // 1. Resolve the collection name
-    let { data: collection } = await getCollection(collectionId);
+    let collection: any = (await getCollection(collectionId)).data;
     
     // If not found by ID, try finding by name (slug)
     if (!collection) {
-      const { data: byName } = await getCollectionByName(collectionId);
+      const { data: byName } = (await getCollectionByName(collectionId)) as any;
       collection = byName;
     }
 
@@ -90,6 +90,18 @@ export async function GET(
     } as ApiResponse<any>, { status: 200 });
 
   } catch (error: any) {
+    console.error('Data GET Error:', error);
+
+    if (error.message === 'Unauthorized') {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Unauthorized',
+        },
+        { status: 401 }
+      );
+    }
+
     return NextResponse.json({
       success: false,
       error: error.message || 'Internal server error',
@@ -106,10 +118,10 @@ export async function POST(
     const { collectionId } = await params;
 
     // 1. Resolve the collection name
-    let { data: collection } = await getCollection(collectionId);
+    let collection: any = (await getCollection(collectionId)).data;
     
     if (!collection) {
-      const { data: byName } = await getCollectionByName(collectionId);
+      const { data: byName } = (await getCollectionByName(collectionId)) as any;
       collection = byName;
     }
 
@@ -167,6 +179,18 @@ export async function POST(
     } as ApiResponse<any>, { status: 201 });
 
   } catch (error: any) {
+    console.error('Data POST Error:', error);
+
+    if (error.message === 'Unauthorized') {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Unauthorized',
+        },
+        { status: 401 }
+      );
+    }
+
     return NextResponse.json({
       success: false,
       error: error.message || 'Internal server error',

@@ -21,6 +21,7 @@ import { useToast } from '@/hooks/use-toast';
 import { FilePreview } from './file-preview';
 import { MultiImageUpload } from './multi-image-upload';
 import { FileUpload } from './file-upload';
+import { ColorField, ColorSwatch } from './color-field';
 import { TipTapEditor } from './tiptap-editor';
 import { Eye, Pencil, Trash2, Columns3, X, Save } from 'lucide-react';
 import type { Field } from '@/lib/types';
@@ -163,6 +164,31 @@ export function RecordsTable({
           </div>
         );
 
+      case 'Textarea':
+        return (
+          <Textarea
+            value={value ?? ''}
+            onChange={(e) => setValue(e.target.value)}
+            placeholder={field.display_name}
+          />
+        );
+      case 'JSON':
+        return (
+          <Textarea
+            value={typeof value === 'string' ? value : JSON.stringify(value, null, 2)}
+            onChange={(e) => setValue(e.target.value)}
+            rows={6}
+            className="font-mono text-xs"
+          />
+        );
+      case 'Color':
+        return (
+          <ColorField
+            value={typeof value === 'string' ? value : ''}
+            onChange={setValue}
+          />
+        );
+
       case 'Number':
         return (
           <Input
@@ -176,16 +202,6 @@ export function RecordsTable({
         return <Input type="date" value={value ?? ''} onChange={(e) => setValue(e.target.value)} />;
       case 'DateTime':
         return <Input type="datetime-local" value={value ?? ''} onChange={(e) => setValue(e.target.value)} />;
-
-      case 'JSON':
-        return (
-          <Textarea
-            value={typeof value === 'string' ? value : JSON.stringify(value, null, 2)}
-            onChange={(e) => setValue(e.target.value)}
-            rows={6}
-            className="font-mono text-xs"
-          />
-        );
 
       case 'Editor':
         return (
@@ -391,14 +407,14 @@ export function RecordsTable({
               {fields.map((f) => {
                 const val = viewRecord[f.name];
                 if (val === undefined || val === null || val === '') return null;
-                return (
-                  <div key={f.id} className="space-y-1">
-                    <p className="text-xs font-semibold text-primary/70 uppercase tracking-wide">{f.display_name}</p>
-                    <div className="text-sm text-foreground bg-muted/30 rounded-md px-3 py-2 border border-border/40">
-                      {renderViewValue(viewRecord, f)}
-                    </div>
-                  </div>
-                );
+            return (
+              <div key={f.id} className="space-y-1">
+                <p className="text-xs font-semibold text-primary/70 uppercase tracking-wide">{f.display_name}</p>
+                <div className="text-sm text-foreground bg-muted/30 rounded-md px-3 py-2 border border-border/40">
+                  {renderViewValue(viewRecord, f)}
+                </div>
+              </div>
+            );
               })}
               {/* Timestamps */}
               {(viewRecord.created_at || viewRecord.updated_at) && (
@@ -476,11 +492,19 @@ function renderViewValue(record: RecordRow, field: Field) {
 
   switch (field.field_type) {
     case 'Boolean':
-      return (
+    return (
         <span className={`inline-flex items-center gap-1 font-medium ${value ? 'text-primary' : 'text-muted-foreground'}`}>
           {value ? '✓ True' : '✗ False'}
         </span>
       );
+    case 'Textarea':
+      return (
+        <div className="whitespace-pre-wrap break-words leading-relaxed">
+          {String(value)}
+        </div>
+      );
+    case 'Color':
+      return <ColorSwatch color={String(value)} />;
     case 'ImageArray': {
       const urls = Array.isArray(value) ? value.filter(Boolean) : [];
       if (!urls.length) return <span className="text-muted-foreground italic">—</span>;

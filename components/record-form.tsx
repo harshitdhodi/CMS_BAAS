@@ -8,6 +8,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { FileUpload } from '@/components/file-upload';
 import { MultiImageUpload } from '@/components/multi-image-upload';
 import { TipTapEditor } from '@/components/tiptap-editor';
+import { ColorField } from '@/components/color-field';
 import { useToast } from '@/hooks/use-toast';
 import { HierarchicalSelector } from '@/components/hierarchical-selector';
 import { Plus, Trash2 } from 'lucide-react';
@@ -152,6 +153,13 @@ export function RecordForm({ collectionId, fields, onCreated }: Props) {
             </label>
           </div>
         );
+      case 'Color':
+        return (
+          <ColorField
+            value={typeof value === 'string' ? value : ''}
+            onChange={(hex) => updateField(field.name, hex)}
+          />
+        );
       case 'Number':
         return (
           <Input
@@ -187,6 +195,15 @@ export function RecordForm({ collectionId, fields, onCreated }: Props) {
             onChange={(e) => updateField(field.name, e.target.value)}
             required={field.is_required}
             placeholder="JSON string"
+          />
+        );
+      case 'Textarea':
+        return (
+          <Textarea
+            value={value}
+            onChange={(e) => updateField(field.name, e.target.value)}
+            required={field.is_required}
+            placeholder={field.display_name}
           />
         );
       case 'File':
@@ -267,7 +284,7 @@ export function RecordForm({ collectionId, fields, onCreated }: Props) {
       {fields.map((field) => (
         <div 
           key={field.id} 
-          className={`space-y-2 ${['Editor', 'JSON', 'Textarea', 'File', 'Image', 'ImageArray', 'Array'].includes(field.field_type) ? 'md:col-span-2' : ''}`}
+          className={`space-y-2 ${['Editor', 'JSON', 'Textarea', 'File', 'Image', 'ImageArray', 'Array'].includes(field.field_type as string) ? 'md:col-span-2' : ''}`}
         >
           {field.field_type !== 'Boolean' && (
             <label className="text-sm font-medium">
