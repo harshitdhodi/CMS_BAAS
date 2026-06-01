@@ -23,6 +23,7 @@ import { MultiImageUpload } from './multi-image-upload';
 import { FileUpload } from './file-upload';
 import { HierarchicalSelector } from './hierarchical-selector';
 import { TipTapEditor } from './tiptap-editor';
+import { ColorField } from './color-field';
 import { Eye, Pencil, Trash2, Columns3, X, Save } from 'lucide-react';
 import type { Field } from '@/lib/types';
 

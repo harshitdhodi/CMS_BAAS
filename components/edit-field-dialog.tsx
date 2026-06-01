@@ -62,9 +62,14 @@ export function EditFieldDialog({ field, open, onOpenChange, onSuccess }: EditFi
         validation_rules: field.validation_rules || [],
         relation_to_collection: field.relation_to_collection || '',
       });
-      fetchCollections();
     }
   }, [open, field]);
+
+  useEffect(() => {
+    if (open && field && collections.length === 0) {
+      fetchCollections();
+    }
+  }, [open]);
 
   async function fetchCollections() {
     try {

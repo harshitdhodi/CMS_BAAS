@@ -27,7 +27,7 @@ npm install
 npm run dev
 ```
 
-Open [https://branduntold.vercel.app](https://branduntold.vercel.app) in your browser.
+Open [https://branduntold.in](https://branduntold.in) in your browser.
 
 ## First Steps
 
