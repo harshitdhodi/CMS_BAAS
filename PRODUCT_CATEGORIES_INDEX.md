@@ -306,7 +306,7 @@ See: **ECOMMERCE_USAGE_GUIDE.md**
 ### Issue: "Collection not found"
 **Solution**: Check COLLECTION_ID is correct
 ```bash
-curl https://branduntold.vercel.app/api/collections
+curl https://branduntold.in/api/collections
 ```
 
 ### Issue: "Invalid parent_id"

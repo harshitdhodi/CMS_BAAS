@@ -7,7 +7,8 @@ import {
   getCollectionFields,
   getDb,
   normalizeDocId,
-  oid
+  oid,
+  resolveRelationCollectionName,
 } from '@/lib/db';
 import { requireAuth } from '@/lib/auth';
 import type { ApiResponse, CollectionWithFields } from '@/lib/types';
@@ -66,27 +67,34 @@ export async function GET(
         if (field.field_type === 'Relation' && field.relation_to_collection && record[field.name]) {
           try {
             const targetOid = oid(record[field.name]);
-            if (targetOid) {
-              const relatedDoc = await db.collection(field.relation_to_collection).findOne({ _id: targetOid });
-              if (relatedDoc) {
-                const populated = normalizeDocId(relatedDoc);
-                
-                // Deep population for hierarchy (self-relations)
-                // This allows seeing grandparent info for Sub-Sub-Children
-                if (field.relation_to_collection === collection.name && populated[field.name]) {
-                  const gpOid = oid(populated[field.name]);
-                  if (gpOid) {
-                    const gpDoc = await db.collection(field.relation_to_collection).findOne({ _id: gpOid });
-                    if (gpDoc) {
-                      populated[`${field.name}_populated`] = normalizeDocId(gpDoc);
-                    }
+            if (!targetOid) continue;
+
+            const targetCollectionName = await resolveRelationCollectionName(field.relation_to_collection);
+            if (!targetCollectionName) continue;
+
+            const relatedDoc = await db.collection(targetCollectionName).findOne({ _id: targetOid });
+            if (!relatedDoc) continue;
+
+            const populated = normalizeDocId(relatedDoc);
+
+            // Deep population for hierarchy (self-relations)
+            if (targetCollectionName === collection.name && populated[field.name]) {
+              const gpOid = oid(populated[field.name]);
+              if (gpOid) {
+                const gpCollectionName = await resolveRelationCollectionName(field.relation_to_collection);
+                if (gpCollectionName) {
+                  const gpDoc = await db.collection(gpCollectionName).findOne({ _id: gpOid });
+                  if (gpDoc) {
+                    populated[`${field.name}_populated`] = normalizeDocId(gpDoc);
                   }
                 }
-                
-                record[`${field.name}_populated`] = populated;
               }
             }
-          } catch (e) {}
+
+            record[`${field.name}_populated`] = populated;
+          } catch (e) {
+            // ignore population errors for individual fields
+          }
         }
       }
       return record;
@@ -96,7 +104,6 @@ export async function GET(
       success: true,
       data: populatedRecords,
     } as ApiResponse<any>, { status: 200 });
-
   } catch (error: any) {
     console.error('Data GET Error:', error);
 
@@ -177,25 +184,31 @@ export async function POST(
       if (field.field_type === 'Relation' && field.relation_to_collection && normalizedRecord[field.name]) {
         try {
           const targetOid = oid(normalizedRecord[field.name]);
-          if (targetOid) {
-            const relatedDoc = await db.collection(field.relation_to_collection).findOne({ _id: targetOid });
-            if (relatedDoc) {
-              const populated = normalizeDocId(relatedDoc);
-              
-              // Deep population for hierarchy (self-relations)
-              if (field.relation_to_collection === collection.name && populated[field.name]) {
-                const gpOid = oid(populated[field.name]);
-                if (gpOid) {
-                  const gpDoc = await db.collection(field.relation_to_collection).findOne({ _id: gpOid });
-                  if (gpDoc) {
-                    populated[`${field.name}_populated`] = normalizeDocId(gpDoc);
-                  }
+          if (!targetOid) continue;
+
+          const targetCollectionName = await resolveRelationCollectionName(field.relation_to_collection);
+          if (!targetCollectionName) continue;
+
+          const relatedDoc = await db.collection(targetCollectionName).findOne({ _id: targetOid });
+          if (!relatedDoc) continue;
+
+          const populated = normalizeDocId(relatedDoc);
+
+          // Deep population for hierarchy (self-relations)
+          if (targetCollectionName === collection.name && populated[field.name]) {
+            const gpOid = oid(populated[field.name]);
+            if (gpOid) {
+              const gpCollectionName = await resolveRelationCollectionName(field.relation_to_collection);
+              if (gpCollectionName) {
+                const gpDoc = await db.collection(gpCollectionName).findOne({ _id: gpOid });
+                if (gpDoc) {
+                  populated[`${field.name}_populated`] = normalizeDocId(gpDoc);
                 }
               }
-              
-              normalizedRecord[`${field.name}_populated`] = populated;
             }
           }
+
+          normalizedRecord[`${field.name}_populated`] = populated;
         } catch (e) {}
       }
     }

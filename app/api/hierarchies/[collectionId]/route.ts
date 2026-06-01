@@ -6,6 +6,7 @@ import {
   getDb,
   normalizeDocId,
   oid,
+  resolveRelationCollectionName,
 } from '@/lib/db';
 
 import type { ApiResponse, CollectionWithFields, Field } from '@/lib/types';
@@ -66,11 +67,14 @@ async function buildTree(
         if (field.field_type === 'Relation' && field.relation_to_collection && normalized[field.name]) {
           try {
             const targetOid = oid(normalized[field.name]);
-            if (targetOid) {
-              const relatedDoc = await db.collection(field.relation_to_collection).findOne({ _id: targetOid });
-              if (relatedDoc) {
-                normalized[`${field.name}_populated`] = normalizeDocId(relatedDoc);
-              }
+            if (!targetOid) continue;
+
+            const targetCollectionName = await resolveRelationCollectionName(field.relation_to_collection);
+            if (!targetCollectionName) continue;
+
+            const relatedDoc = await db.collection(targetCollectionName).findOne({ _id: targetOid });
+            if (relatedDoc) {
+              normalized[`${field.name}_populated`] = normalizeDocId(relatedDoc);
             }
           } catch (e) {
             // Silently skip if related document lookup fails
