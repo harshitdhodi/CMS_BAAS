@@ -23,6 +23,7 @@ import { MultiImageUpload } from './multi-image-upload';
 import { FileUpload } from './file-upload';
 import { ColorField, ColorSwatch } from './color-field';
 import { TipTapEditor } from './tiptap-editor';
+import { HierarchicalSelector } from './hierarchical-selector';
 import { Eye, Pencil, Trash2, Columns3, X, Save } from 'lucide-react';
 import type { Field } from '@/lib/types';
 
@@ -146,6 +147,11 @@ export function RecordsTable({
         next['slug'] = slugify(String(v));
       }
 
+      // Auto-generate category_slug if category_name is changed
+      if (field.name === 'category_name' && fields.some(f => f.name === 'category_slug')) {
+        next['category_slug'] = slugify(String(v));
+      }
+
       return next;
     });
 
@@ -250,6 +256,26 @@ export function RecordsTable({
 
       case 'ImageArray':
         return <MultiImageUpload value={Array.isArray(value) ? value : []} onChange={setValue} />;
+
+      case 'Relation': {
+        if (!field.relation_to_collection) {
+          return (
+            <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-sm text-destructive">
+              Relation target collection is not configured.
+            </div>
+          );
+        }
+        const isSelfRelation = field.relation_to_collection === collectionId;
+        return (
+          <HierarchicalSelector
+            collectionId={field.relation_to_collection}
+            parentFieldName={isSelfRelation ? field.name : "parent_id"}
+            value={value}
+            onSelect={(selectedId) => setValue(selectedId)}
+            placeholder={`Select ${field.display_name}...`}
+          />
+        );
+      }
 
       default:
         return (
