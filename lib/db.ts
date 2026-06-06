@@ -466,14 +466,19 @@ export async function populateRelationLabels(records: any[], fields: Field[]) {
   }
 }
 
-export async function getRecords(collectionName: string, limit = 100, filter: Record<string, any> = {}) {
+export async function getRecords(
+  collectionName: string,
+  limit = 100,
+  filter: Record<string, any> = {},
+  projection?: Record<string, 0 | 1>
+) {
   try {
     const db = await getDb();
-    const docs = await db.collection(collectionName)
-      .find(filter)
+    const cursor = db.collection(collectionName)
+      .find(filter, projection ? { projection: { _id: 1, ...projection } } : undefined)
       .sort({ created_at: -1 })
-      .limit(limit)
-      .toArray();
+      .limit(limit);
+    const docs = await cursor.toArray();
     const data = docs.map((d) => normalizeDocId(d as any));
     return { data, error: null as null };
   } catch (error) {
