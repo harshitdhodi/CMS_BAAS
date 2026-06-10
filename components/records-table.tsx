@@ -276,26 +276,14 @@ const extraKeys = records.length > 0
       }
       case 'File':
       case 'Image':
-        if (typeof value === 'string' && (value.startsWith('/uploads/') || value.startsWith('http'))) {
-          const isPdf = value.match(/\.pdf$/i);
-          if (isPdf) {
-            return (
-              <div className="flex items-center gap-2">
-                <a
-                  href={value}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 text-xs text-blue-600 hover:underline"
-                >
-                  <FileText className="w-4 h-4 shrink-0" />
-                  <span className="truncate max-w-[120px]">View CV</span>
-                </a>
-              </div>
-            );
-          }
-          return <FilePreview url={value} fieldType={field.field_type} />;
-        }
-        return String(value);
+        return (
+          <FileUpload
+            field={field}
+            value={value}
+            onChange={setValue}
+            required={field.is_required}
+          />
+        );
       case 'ImageArray':
         return <MultiImageUpload value={Array.isArray(value) ? value : []} onChange={setValue} />;
       case 'Relation': {
@@ -532,7 +520,7 @@ const extraKeys = records.length > 0
             <DialogTitle className="text-primary">Edit Record</DialogTitle>
           </DialogHeader>
           {editRecord && (
-            <div className="space-y-5 pt-2">
+            <div className="space-y-5 pt-2" key={editRecord.id}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {fields.map((f) => (
                   <div
