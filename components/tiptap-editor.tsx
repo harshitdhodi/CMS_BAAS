@@ -225,7 +225,7 @@ const saveProduct = useCallback(async () => {
   };
 
   try {
-    const res = await fetch('http://localhost:3001/api/data/product', {
+    const res = await fetch('/api/data/product', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),

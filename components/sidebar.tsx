@@ -60,7 +60,7 @@ export function Sidebar() {
             .catch(() => ({ success: false }))
         ]);
 
-        if (colJson?.success) setCollections(colJson.data || []);
+        if (colJson?.success) setCollections((colJson.data || []).slice().reverse());
         if (folderJson.success) {
           setFolders(folderJson.data || []);
         } else {
