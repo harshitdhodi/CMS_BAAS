@@ -37,23 +37,26 @@ async function buildTree(
   // Define query for the current level.
   // For roots (parentId is null), we strictly check if the hierarchy field is explicitly null or does not exist.
   // Records with an empty string as parent are NOT considered roots here, as they might be intended as children of an empty string parent.
-  const query = rootQuery 
-    ? rootQuery 
-    : (parentId === null
-        ? {
-            $or: [
-              { [parentFieldName]: null }, 
-              { [parentFieldName]: '' }, // Treat empty strings as roots for robust fetching
-              { [parentFieldName]: { $exists: false } }
-            ],
-          }
-        : {
-            // Try to cast to ObjectId for the query, fallback to string if invalid
-            $or: [
-            { [parentFieldName]: oid(parentId) },
-            { [parentFieldName]: parentId }
-          ]
-        });
+  let query: any;
+  if (rootQuery) {
+    query = rootQuery;
+  } else if (parentId === null) {
+    query = {
+      $or: [
+        { [parentFieldName]: null },
+        { [parentFieldName]: '' }, // Treat empty strings as roots for robust fetching
+        { [parentFieldName]: { $exists: false } },
+      ],
+    };
+  } else {
+    query = {
+      // Try to cast to ObjectId for the query, fallback to string if invalid
+      $or: [
+        { [parentFieldName]: oid(parentId) },
+        { [parentFieldName]: parentId },
+      ],
+    };
+  }
 
   const records = await collection
     .find(query)

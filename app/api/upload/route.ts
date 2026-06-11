@@ -1,78 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
-import { existsSync } from 'fs';
 import { requireAuth } from '@/lib/auth';
 import type { ApiResponse } from '@/lib/types';
-
-const UPLOAD_DIR = join(process.cwd(), 'public', 'uploads');
-
-// Ensure upload directory exists
-async function ensureUploadDir() {
-  if (!existsSync(UPLOAD_DIR)) {
-    await mkdir(UPLOAD_DIR, { recursive: true });
-  }
-}
-
-// Get allowed MIME types based on field type
-function getAllowedMimeTypes(fieldType: string): string[] {
-  switch (fieldType.toLowerCase()) {
-    case 'image':
-      return [
-        'image/jpeg',
-        'image/jpg',
-        'image/png',
-        'image/gif',
-        'image/webp',
-        'image/svg+xml',
-        'image/bmp',
-        'image/tiff',
-      ];
-    case 'file':
-      return [
-        // Images
-        'image/jpeg',
-        'image/jpg',
-        'image/png',
-        'image/gif',
-        'image/webp',
-        'image/svg+xml',
-        'image/bmp',
-        'image/tiff',
-        // Documents
-        'application/pdf',
-        'application/msword',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'application/vnd.ms-excel',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'application/vnd.ms-powerpoint',
-        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-        // Videos
-        'video/mp4',
-        'video/mpeg',
-        'video/quicktime',
-        'video/x-msvideo',
-        'video/webm',
-        'video/x-matroska',
-        // Audio
-        'audio/mpeg',
-        'audio/mp3',
-        'audio/wav',
-        'audio/ogg',
-        'audio/webm',
-        // Text
-        'text/plain',
-        'text/csv',
-        // Archives
-        'application/zip',
-        'application/x-rar-compressed',
-        'application/x-tar',
-        'application/gzip',
-      ];
-    default:
-      return [];
-  }
-}
+import {
+  getAllowedMimeTypes,
+  generateFilename,
+  saveFileToLocal,
+  formatError,
+} from './multerConfig';
 
 export async function POST(request: NextRequest) {
   try {
@@ -131,11 +65,8 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error('Upload error:', error);
-    // Log error details for debugging
-    if (error instanceof Error) {
-      console.error('Error message:', error.message);
-      console.error('Error stack:', error.stack);
-    }
+    const errorMessage = formatError(error);
+
     if (error instanceof Error && error.message === 'Unauthorized') {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' } as ApiResponse<null>,
@@ -143,7 +74,7 @@ export async function POST(request: NextRequest) {
       );
     }
     return NextResponse.json(
-      { success: false, error: error instanceof Error ? error.message : 'Failed to upload file' } as ApiResponse<null>,
+      { success: false, error: errorMessage } as ApiResponse<null>,
       { status: 500 }
     );
   }
