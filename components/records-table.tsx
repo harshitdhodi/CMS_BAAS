@@ -50,6 +50,8 @@ type Props = {
   hiddenFieldNames?: string[];
   onDelete: () => void;
   onUpdate?: () => void;
+  /** Optional: render a status badge/indicator per row (e.g. for events) */
+  statusRenderer?: (record: RecordRow) => React.ReactNode;
 };
 
 // Keys that are internal/system and should never be shown as "extra" fields
@@ -73,6 +75,7 @@ export function RecordsTable({
   hiddenFieldNames = [],
   onDelete,
   onUpdate,
+  statusRenderer,
 }: Props) {
   const { toast } = useToast();
 
@@ -381,6 +384,9 @@ const extraKeys = records.length > 0
                 {extraKeys.map((k) => (
                   <TableHead key={k}>{labelFromKey(k)}</TableHead>
                 ))}
+                {statusRenderer && (
+                  <TableHead className="w-28">Status</TableHead>
+                )}
                 <TableHead className="w-32 text-right pr-4">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -413,6 +419,10 @@ const extraKeys = records.length > 0
                         {formatExtraValue(r[k], k)}
                       </TableCell>
                     ))}
+                    {/* Status badge column */}
+                    {statusRenderer && (
+                      <TableCell>{statusRenderer(r)}</TableCell>
+                    )}
                     <TableCell className="text-right pr-3">
                       <div className="flex items-center justify-end gap-1">
                         <Button

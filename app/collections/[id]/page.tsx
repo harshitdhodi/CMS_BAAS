@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { CreateFieldDialog } from '@/components/create-field-dialog';
 import { EditFieldDialog } from '@/components/edit-field-dialog';
@@ -15,8 +16,41 @@ import { RecordForm } from '@/components/record-form';
 import { RecordsTable } from '@/components/records-table';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/lib/auth-client';
-import { ChevronLeft, Edit2 } from 'lucide-react';
+import { ChevronLeft, Edit2, Calendar, Clock } from 'lucide-react';
 import type { Collection, Field } from '@/lib/types';
+
+// ── Event status helpers ──────────────────────────────────────────────────────
+
+type EventStatus = 'all' | 'upcoming' | 'past';
+
+function resolveEventStatus(record: Record<string, any>): 'upcoming' | 'past' {
+  if (record.status) {
+    const s = String(record.status).toLowerCase().trim();
+    if (s === 'past' || s === 'upcoming') return s;
+  }
+  if (record.date) {
+    const eventDate = new Date(record.date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return eventDate < today ? 'past' : 'upcoming';
+  }
+  return 'upcoming';
+}
+
+function EventStatusBadge({ record }: { record: Record<string, any> }) {
+  const status = resolveEventStatus(record);
+  return status === 'upcoming' ? (
+    <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 hover:bg-emerald-100 gap-1 text-xs">
+      <Clock className="w-3 h-3" />
+      Upcoming
+    </Badge>
+  ) : (
+    <Badge variant="secondary" className="bg-gray-100 text-gray-600 hover:bg-gray-100 gap-1 text-xs">
+      <Calendar className="w-3 h-3" />
+      Past
+    </Badge>
+  );
+}
 
 export default function CollectionDetailPage() {
   const params = useParams();
@@ -37,6 +71,10 @@ export default function CollectionDetailPage() {
   const [editingField, setEditingField] = useState<Field | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editCollectionDialogOpen, setEditCollectionDialogOpen] = useState(false);
+
+  // Events status filter (only active when collection name is 'events')
+  const isEventsCollection = resolvedId === 'events' || collection?.name === 'events';
+  const [eventStatusFilter, setEventStatusFilter] = useState<EventStatus>('upcoming');
 
   // Detect if this collection has a hierarchy (a Relation field pointing to self or named 'parent')
   const parentRelationField = fields.find(
@@ -94,6 +132,26 @@ export default function CollectionDetailPage() {
 
     return flatten(buildTree(records));
   }, [records, parentFieldName]);
+
+  // For events collection: enrich records with resolved status and apply filter
+  const enrichedRecords = useMemo(() => {
+    if (!isEventsCollection) return records;
+    return records.map((r) => ({ ...r, _resolvedStatus: resolveEventStatus(r) }));
+  }, [records, isEventsCollection]);
+
+  const eventFilteredRecords = useMemo(() => {
+    if (!isEventsCollection || eventStatusFilter === 'all') return enrichedRecords;
+    return enrichedRecords.filter((r) => r._resolvedStatus === eventStatusFilter);
+  }, [enrichedRecords, isEventsCollection, eventStatusFilter]);
+
+  const eventCounts = useMemo(() => {
+    if (!isEventsCollection) return { all: 0, upcoming: 0, past: 0 };
+    return {
+      all: enrichedRecords.length,
+      upcoming: enrichedRecords.filter((r) => r._resolvedStatus === 'upcoming').length,
+      past: enrichedRecords.filter((r) => r._resolvedStatus === 'past').length,
+    };
+  }, [enrichedRecords, isEventsCollection]);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -324,6 +382,44 @@ export default function CollectionDetailPage() {
                     onCreated={() => setRecordRefresh((p) => p + 1)}
                   />
 
+                  {/* ── Events status filter tabs ── */}
+                  {isEventsCollection && enrichedRecords.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-border/40">
+                      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mr-1">
+                        Filter by Status:
+                      </span>
+                      {(['all', 'upcoming', 'past'] as EventStatus[]).map((tab) => (
+                        <button
+                          key={tab}
+                          onClick={() => setEventStatusFilter(tab)}
+                          className={`
+                            inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold
+                            border transition-all duration-150 cursor-pointer
+                            ${eventStatusFilter === tab
+                              ? tab === 'upcoming'
+                                ? 'bg-emerald-600 text-white border-emerald-600'
+                                : tab === 'past'
+                                ? 'bg-gray-500 text-white border-gray-500'
+                                : 'bg-primary text-primary-foreground border-primary'
+                              : 'bg-transparent text-muted-foreground border-border hover:border-primary hover:text-primary'
+                            }
+                          `}
+                        >
+                          {tab === 'upcoming' && <Clock className="w-3 h-3" />}
+                          {tab === 'past' && <Calendar className="w-3 h-3" />}
+                          <span className="capitalize">{tab}</span>
+                          <span className={`
+                            inline-flex items-center justify-center min-w-[18px] h-[18px] px-1
+                            rounded-full text-[10px] font-bold
+                            ${eventStatusFilter === tab ? 'bg-white/25 text-inherit' : 'bg-muted text-muted-foreground'}
+                          `}>
+                            {eventCounts[tab]}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
                   {parentFieldName ? (
                     <div className="space-y-10 pt-6">
                       <div className="space-y-4">
@@ -376,9 +472,13 @@ export default function CollectionDetailPage() {
                     <RecordsTable
                       collectionId={collectionId}
                       fields={fields}
-                      records={records}
+                      records={isEventsCollection ? eventFilteredRecords : records}
                       onDelete={() => setRecordRefresh((p) => p + 1)}
                       onUpdate={() => setRecordRefresh((p) => p + 1)}
+                      statusRenderer={isEventsCollection
+                        ? (record) => <EventStatusBadge record={record} />
+                        : undefined
+                      }
                     />
                   )}
                 </CardContent>
