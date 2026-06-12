@@ -65,6 +65,10 @@ export async function GET(request: NextRequest) {
             label: d.label,
             order: d.order,
             is_active: true,
+            margin_top: '',
+            margin_bottom: '',
+            padding_top: '',
+            padding_bottom: '',
             created_at: now,
             updated_at: now,
           }));
@@ -97,7 +101,7 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
     const { page, components } = body as {
       page: string;
-      components: Array<{ key: string; is_active: boolean; order: number; label?: string }>;
+      components: Array<{ key: string; is_active: boolean; order: number; label?: string; margin_top?: string; margin_bottom?: string; padding_top?: string; padding_bottom?: string }>;
     };
 
     if (!page || !Array.isArray(components)) {
@@ -120,6 +124,10 @@ export async function PUT(request: NextRequest) {
             is_active: c.is_active,
             order: c.order,
             ...(c.label !== undefined ? { label: c.label } : {}),
+            ...(c.margin_top !== undefined ? { margin_top: c.margin_top } : {}),
+            ...(c.margin_bottom !== undefined ? { margin_bottom: c.margin_bottom } : {}),
+            ...(c.padding_top !== undefined ? { padding_top: c.padding_top } : {}),
+            ...(c.padding_bottom !== undefined ? { padding_bottom: c.padding_bottom } : {}),
             updated_at: now,
           },
           $setOnInsert: { page, key: c.key, created_at: now },

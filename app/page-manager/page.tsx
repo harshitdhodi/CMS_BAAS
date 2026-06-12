@@ -35,6 +35,10 @@ interface PageComponent {
   label: string;
   order: number;
   is_active: boolean;
+  margin_top?: string;
+  margin_bottom?: string;
+  padding_top?: string;
+  padding_bottom?: string;
 }
 
 // Pages registry — add new pages here as you build them
@@ -65,9 +69,6 @@ const PAGES: Array<{ key: string; label: string; description: string }> = [
   // { key: 'contact',   label: 'Contact',   description: 'Contact page sections' },
 ];
 
-// ── Drag state (module-level to avoid re-renders) ──────────────────────────
-let dragSrcIndex: number | null = null;
-
 // ── Component ──────────────────────────────────────────────────────────────
 export default function PageManagerPage() {
   const router = useRouter();
@@ -82,9 +83,18 @@ export default function PageManagerPage() {
   const [dirty, setDirty] = useState(false);
   const [expandedPages, setExpandedPages] = useState<Record<string, boolean>>({ 'home-02': true });
 
-  // ── Edit label modal state ────────────────────────────────────────────
+  const [dragItemIndex, setDragItemIndex] = useState<number | null>(null);
+  const [dragOverItemIndex, setDragOverItemIndex] = useState<number | null>(null);
+
+  // ── Section Settings modal state ──────────────────────────────────────
   const [editTarget, setEditTarget] = useState<PageComponent | null>(null);
-  const [editLabelValue, setEditLabelValue] = useState('');
+  const [editFormData, setEditFormData] = useState({
+    label: '',
+    margin_top: '',
+    margin_bottom: '',
+    padding_top: '',
+    padding_bottom: '',
+  });
   const editInputRef = useRef<HTMLInputElement>(null);
 
   // ── Auth guard ────────────────────────────────────────────────────────
@@ -120,26 +130,41 @@ export default function PageManagerPage() {
   };
 
   // ── Drag-and-drop reorder ─────────────────────────────────────────────
-  const handleDragStart = (index: number) => {
-    dragSrcIndex = index;
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', index.toString());
+    setDragItemIndex(index);
   };
 
-  const handleDragOver = (e: React.DragEvent, index: number) => {
+  const handleDragEnter = (e: React.DragEvent, index: number) => {
     e.preventDefault();
-    if (dragSrcIndex === null || dragSrcIndex === index) return;
+    if (dragItemIndex !== null && index !== dragItemIndex) {
+      setDragOverItemIndex(index);
+    }
+  };
 
-    setComponents((prev) => {
-      const next = [...prev];
-      const [moved] = next.splice(dragSrcIndex!, 1);
-      next.splice(index, 0, moved);
-      dragSrcIndex = index;
-      return next.map((c, i) => ({ ...c, order: i + 1 }));
-    });
-    setDirty(true);
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault(); // Necessary to allow dropping
+  };
+
+  const handleDrop = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    if (dragItemIndex !== null && dragItemIndex !== index) {
+      setComponents((prev) => {
+        const next = [...prev];
+        const [moved] = next.splice(dragItemIndex, 1);
+        next.splice(index, 0, moved);
+        return next.map((c, i) => ({ ...c, order: i + 1 }));
+      });
+      setDirty(true);
+    }
+    setDragItemIndex(null);
+    setDragOverItemIndex(null);
   };
 
   const handleDragEnd = () => {
-    dragSrcIndex = null;
+    setDragItemIndex(null);
+    setDragOverItemIndex(null);
   };
 
   // ── Save ──────────────────────────────────────────────────────────────
@@ -156,6 +181,10 @@ export default function PageManagerPage() {
             label: c.label,
             is_active: c.is_active,
             order: c.order,
+            margin_top: c.margin_top || '',
+            margin_bottom: c.margin_bottom || '',
+            padding_top: c.padding_top || '',
+            padding_bottom: c.padding_bottom || '',
           })),
         }),
       });
@@ -194,20 +223,37 @@ export default function PageManagerPage() {
     }
   };
 
-  // ── Edit label ───────────────────────────────────────────────────────
+  // ── Edit Section Settings ────────────────────────────────────────────
   const openEditLabel = (comp: PageComponent) => {
     setEditTarget(comp);
-    setEditLabelValue(comp.label);
+    setEditFormData({
+      label: comp.label || '',
+      margin_top: comp.margin_top || '',
+      margin_bottom: comp.margin_bottom || '',
+      padding_top: comp.padding_top || '',
+      padding_bottom: comp.padding_bottom || '',
+    });
     // Focus input after dialog opens
     setTimeout(() => editInputRef.current?.focus(), 80);
   };
 
   const confirmEditLabel = () => {
     if (!editTarget) return;
-    const trimmed = editLabelValue.trim();
-    if (!trimmed) return;
+    const trimmedLabel = editFormData.label.trim();
+    if (!trimmedLabel) return;
     setComponents((prev) =>
-      prev.map((c) => (c.key === editTarget.key ? { ...c, label: trimmed } : c))
+      prev.map((c) => 
+        c.key === editTarget.key 
+          ? { 
+              ...c, 
+              label: trimmedLabel,
+              margin_top: editFormData.margin_top,
+              margin_bottom: editFormData.margin_bottom,
+              padding_top: editFormData.padding_top,
+              padding_bottom: editFormData.padding_bottom,
+            } 
+          : c
+      )
     );
     setDirty(true);
     setEditTarget(null);
@@ -327,20 +373,30 @@ export default function PageManagerPage() {
               </div>
             ) : (
               <div className="divide-y divide-border">
-                {components.map((comp, index) => (
-                  <div
-                    key={comp.key}
-                    draggable
-                    onDragStart={() => handleDragStart(index)}
-                    onDragOver={(e) => handleDragOver(e, index)}
-                    onDragEnd={handleDragEnd}
-                    className={cn(
-                      'flex items-center gap-3 px-4 py-3.5 transition-all duration-150 group',
-                      comp.is_active
-                        ? 'bg-card hover:bg-accent/30'
-                        : 'bg-muted/40 hover:bg-muted/60 opacity-60'
-                    )}
-                  >
+                {components.map((comp, index) => {
+                  const isDragging = dragItemIndex === index;
+                  const isDragOver = dragOverItemIndex === index;
+
+                  return (
+                    <div
+                      key={comp.key}
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, index)}
+                      onDragEnter={(e) => handleDragEnter(e, index)}
+                      onDragOver={handleDragOver}
+                      onDrop={(e) => handleDrop(e, index)}
+                      onDragEnd={handleDragEnd}
+                      className={cn(
+                        'flex items-center gap-3 px-4 py-3.5 transition-all duration-150 group border-b border-border/50',
+                        comp.is_active
+                          ? 'bg-card hover:bg-accent/30'
+                          : 'bg-muted/40 hover:bg-muted/60 opacity-60',
+                        isDragging && 'opacity-30 bg-muted',
+                        isDragOver && dragItemIndex !== null && (
+                          index > dragItemIndex ? 'border-b-2 border-b-primary' : 'border-t-2 border-t-primary'
+                        )
+                      )}
+                    >
                     {/* Drag handle */}
                     <div className="cursor-grab active:cursor-grabbing text-muted-foreground/40 group-hover:text-muted-foreground transition-colors shrink-0">
                       <GripVertical className="w-4 h-4" />
@@ -407,7 +463,7 @@ export default function PageManagerPage() {
                       {comp.is_active ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                     </Button>
                   </div>
-                ))}
+                )})}
               </div>
             )}
           </div>
@@ -433,20 +489,20 @@ export default function PageManagerPage() {
         </div>
       </div>
 
-      {/* ── Edit Label Dialog ─────────────────────────────────────────── */}
+      {/* ── Section Settings Dialog ───────────────────────────────────── */}
       <Dialog open={!!editTarget} onOpenChange={(open) => !open && setEditTarget(null)}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Rename Section</DialogTitle>
+            <DialogTitle>Section Settings</DialogTitle>
           </DialogHeader>
-          <div className="py-2 space-y-3">
+          <div className="py-2 space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="label-input">Section name</Label>
               <Input
                 id="label-input"
                 ref={editInputRef}
-                value={editLabelValue}
-                onChange={(e) => setEditLabelValue(e.target.value)}
+                value={editFormData.label}
+                onChange={(e) => setEditFormData(prev => ({ ...prev, label: e.target.value }))}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') confirmEditLabel();
                   if (e.key === 'Escape') setEditTarget(null);
@@ -454,7 +510,47 @@ export default function PageManagerPage() {
                 placeholder="e.g. Why Choose Us"
               />
             </div>
-            <p className="text-xs text-muted-foreground">
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Margin Top</Label>
+                <Input
+                  value={editFormData.margin_top}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, margin_top: e.target.value }))}
+                  placeholder="e.g. 50px, 2rem"
+                  className="text-sm h-8"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Margin Bottom</Label>
+                <Input
+                  value={editFormData.margin_bottom}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, margin_bottom: e.target.value }))}
+                  placeholder="e.g. 50px, 2rem"
+                  className="text-sm h-8"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Padding Top</Label>
+                <Input
+                  value={editFormData.padding_top}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, padding_top: e.target.value }))}
+                  placeholder="e.g. 50px, 2rem"
+                  className="text-sm h-8"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Padding Bottom</Label>
+                <Input
+                  value={editFormData.padding_bottom}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, padding_bottom: e.target.value }))}
+                  placeholder="e.g. 50px, 2rem"
+                  className="text-sm h-8"
+                />
+              </div>
+            </div>
+
+            <p className="text-xs text-muted-foreground mt-2">
               Component key: <span className="font-mono">{editTarget?.key}</span>
             </p>
           </div>
@@ -464,9 +560,9 @@ export default function PageManagerPage() {
             </Button>
             <Button
               onClick={confirmEditLabel}
-              disabled={!editLabelValue.trim() || editLabelValue.trim() === editTarget?.label}
+              disabled={!editFormData.label.trim()}
             >
-              Rename
+              Save Settings
             </Button>
           </DialogFooter>
         </DialogContent>

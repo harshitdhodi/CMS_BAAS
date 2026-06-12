@@ -201,10 +201,16 @@ export default function ColorManagerPage() {
 
   // ── Update a specific color ────────────────────────────────────────────
   const updateColor = (category: string, key: string, value: string) => {
+    // Prevent Prototype Pollution
+    if (['__proto__', 'constructor', 'prototype'].includes(category) || 
+        ['__proto__', 'constructor', 'prototype'].includes(key)) {
+      return;
+    }
+    
     setColors((prev) => ({
       ...prev,
       [category]: {
-        ...prev[category],
+        ...prev[category as keyof typeof defaultColors],
         [key]: value,
       },
     }));
@@ -385,7 +391,8 @@ export default function ColorManagerPage() {
                 <ScrollArea className="h-[500px] pr-4">
                   <div className="space-y-4">
                     {keys.map((key) => {
-                      const colorValue = colors[category]?.[key] || '#000000';
+                      const categoryObj = Reflect.get(colors, category);
+                      const colorValue = categoryObj ? (Reflect.get(categoryObj, key) || '#000000') : '#000000';
                       const variableName = `${category}-${key}`.replace(/([A-Z])/g, '-$1').toLowerCase();
                       const cssVar = cssVariableMap[variableName] || `--tj-color-${variableName}`;
                       
