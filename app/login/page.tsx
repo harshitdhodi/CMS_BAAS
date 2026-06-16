@@ -27,7 +27,7 @@ export default function LoginPage() {
         throw new Error(json.error || 'Login failed');
       }
       toast({ title: 'Login successful', description: `Welcome, ${json.data.username}!` });
-      router.push('/collections/6a0f2f2618153bfec723c160?collectionName=herosec');
+      router.push('/');
       router.refresh();
     } catch (err) {
       toast({
