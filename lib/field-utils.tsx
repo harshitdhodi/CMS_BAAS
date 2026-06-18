@@ -14,6 +14,7 @@ import {
   Palette,
   AlignLeft,
   Minus,
+  Navigation,
 } from 'lucide-react';
 
 export const FIELD_TYPES: Record<FieldType, { label: string; description: string }> = {
@@ -32,6 +33,7 @@ export const FIELD_TYPES: Record<FieldType, { label: string; description: string
   Editor: { label: 'Editor', description: 'Rich text editor with formatting' },
   Color: { label: 'Color', description: 'Hex color picker for backgrounds and text' },
   Dropdown: { label: 'Dropdown', description: 'Select from predefined options' },
+  PageRoute: { label: 'Page Route', description: 'Select dynamic and static page routes' },
 };
 
 export function getFieldTypeIcon(type: FieldType) {
@@ -67,6 +69,8 @@ export function getFieldTypeIcon(type: FieldType) {
       return <AlignLeft {...iconProps} />;
     case 'Dropdown':
       return <Minus {...iconProps} />;
+    case 'PageRoute':
+      return <Navigation {...iconProps} />;
     default:
       return <Type {...iconProps} />;
   }

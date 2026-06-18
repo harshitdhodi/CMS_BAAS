@@ -18,6 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import { EditCollectionDialog } from '@/components/edit-collection-dialog';
 import { ChevronRight, Trash2, Edit2, Loader2 } from 'lucide-react';
 import type { Collection } from '@/lib/types';
+import { IconRenderer } from '@/components/icon-renderer';
 
 interface CollectionsListProps {
   collections?: Collection[];
@@ -38,6 +39,15 @@ export function CollectionsList({ collections: initialCollections = [], isLoadin
     if (!initialCollections.length && !initialLoading) {
       fetchCollections();
     }
+
+    const handleRefresh = () => {
+      fetchCollections();
+    };
+
+    window.addEventListener('sidebar:refresh', handleRefresh);
+    return () => {
+      window.removeEventListener('sidebar:refresh', handleRefresh);
+    };
   }, []);
 
   async function fetchCollections() {
@@ -123,7 +133,9 @@ export function CollectionsList({ collections: initialCollections = [], isLoadin
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   {collection.icon && (
-                    <span className="text-2xl">{collection.icon}</span>
+                    <span className="text-2xl flex items-center justify-center">
+                      <IconRenderer icon={collection.icon} />
+                    </span>
                   )}
                   <CardTitle className="truncate">
                     {collection.display_name}

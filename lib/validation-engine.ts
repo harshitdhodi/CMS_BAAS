@@ -40,6 +40,8 @@ export function validateFieldValue(
     case 'Email':
     case 'Text':
     case 'Color':
+    case 'Dropdown':
+    case 'PageRoute':
       validateText(value, field, errors);
       if (field.field_type === 'Color' && value && typeof value === 'string') {
         const hex = value.trim();

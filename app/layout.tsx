@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'jayshree_blogs BAAS',
+  title: 'Wiretex Manufacturing BAAS',
   description: 'Dynamic Schema Builder and Content Management System',
   icons: {
     icon: '/favicon.svg',

@@ -11,6 +11,7 @@ import { TipTapEditor } from '@/components/tiptap-editor';
 import { ColorField } from '@/components/color-field';
 import { useToast } from '@/hooks/use-toast';
 import { HierarchicalSelector } from '@/components/hierarchical-selector';
+import { PageRouteSelector } from '@/components/page-route-selector';
 import { Plus, Trash2 } from 'lucide-react';
 import type { Field } from '@/lib/types';
 
@@ -265,6 +266,16 @@ export function RecordForm({ collectionId, fields, onCreated }: Props) {
               // For example: updateField(`${field.name}_path`, fullPath);
             }}
             placeholder={`Select ${field.display_name}...`}
+          />
+        );
+      case 'PageRoute':
+        return (
+          <PageRouteSelector
+            value={value}
+            onChange={(route) => updateField(field.name, route)}
+            required={field.is_required}
+            collectionId={collectionId}
+            fieldName={field.name}
           />
         );
       default:

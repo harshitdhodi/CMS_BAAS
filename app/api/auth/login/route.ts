@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Login API Error:', error);
     return NextResponse.json(
-      { success: false, error: error.message } as ApiResponse<null>,
+      { success: false, error: error.stack } as ApiResponse<null>,
       { status: 500 }
     );
   }

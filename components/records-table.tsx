@@ -22,6 +22,7 @@ import { FilePreview } from './file-preview';
 import { MultiImageUpload } from './multi-image-upload';
 import { FileUpload } from './file-upload';
 import { HierarchicalSelector } from './hierarchical-selector';
+import { PageRouteSelector } from './page-route-selector';
 import { TipTapEditor } from './tiptap-editor';
 import { ColorField, ColorSwatch } from './color-field';
 import { Eye, Pencil, Trash2, Columns3, X, Save, FileText } from 'lucide-react';
@@ -335,6 +336,17 @@ const extraKeys = records.length > 0
           />
         );
       }
+      case 'PageRoute':
+        return (
+          <PageRouteSelector
+            value={value}
+            onChange={(route) => setValue(route)}
+            required={field.is_required}
+            collectionId={collectionId}
+            fieldName={field.name}
+            recordId={editRecord?.id}
+          />
+        );
       default:
         return (
           <Input
