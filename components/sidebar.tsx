@@ -436,6 +436,16 @@ export function Sidebar() {
           {/* Static Links */}
           <div className=" border-t border-border/50 space-y-1">
             <Link
+              href="/dashboard"
+              className={cn(
+                'flex items-center text-foreground rounded-lg transition-all duration-200 hover:bg-accent hover:text-black py-2 px-3 gap-2',
+                pathname === '/dashboard' ? 'bg-primary text-primary-foreground font-medium hover:text-black' : 'text-foreground/70'
+              )}
+            >
+              <LayoutDashboard className="w-6 h-6 text-gray-500" />
+              {isOpen && <span className="truncate text-sm">Dashboard</span>}
+            </Link>
+            <Link
               href="/color-manager"
               className={cn(
                 'flex items-center text-foreground rounded-lg transition-all duration-200 hover:bg-accent hover:text-black py-2 px-3 gap-2',
@@ -455,7 +465,16 @@ export function Sidebar() {
               <IconRenderer icon="ph:file-text-fill" className="w-6 h-6 text-gray-500" />
               {isOpen && <span className="truncate text-sm">Page Manager</span>}
             </Link> 
-
+            <Link
+              href="/calendar"
+              className={cn(
+                'flex items-center text-foreground rounded-lg transition-all duration-200 hover:bg-accent hover:text-black py-2 px-3 gap-2',
+                pathname === '/calendar' ? 'bg-primary text-primary-foreground font-medium hover:text-black' : 'text-foreground/70'
+              )}
+            >
+              <IconRenderer icon="lucide:calendar" className="w-6 h-6 text-gray-500" />
+              {isOpen && <span className="truncate text-sm">Calendar</span>}
+            </Link>
             {/* Email & Settings Section */}
             <div className="pt-2 pb-1">
               <p className="px-3 text-xs font-semibold text-foreground/50 uppercase tracking-wider">
