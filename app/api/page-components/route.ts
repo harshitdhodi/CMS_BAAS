@@ -39,6 +39,13 @@ const PAGE_DEFAULTS: Record<string, Array<{ key: string; label: string; order: n
     { key: 'Contact3',   label: 'Contact Form', order: 2 },
     { key: 'Cta',        label: 'CTA',          order: 3 },
   ],
+  'events': [
+    { key: 'EventsSection', label: 'Events List', order: 1 },
+    { key: 'Gallery',       label: 'Image Gallery', order: 2 },
+  ],
+  'downloads': [
+    { key: 'DownloadCenter', label: 'Download Center', order: 1 },
+  ],
   'faq': [
     { key: 'Faq2', label: 'FAQ Accordion 1', order: 1 },
     { key: 'Faq3', label: 'FAQ Accordion 2', order: 2 },

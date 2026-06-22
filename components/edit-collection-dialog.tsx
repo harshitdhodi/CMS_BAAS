@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -63,13 +63,26 @@ export function EditCollectionDialog({
     display_name: '',
     description: '',
     icon: '📦',
-    color: '#3B82F6',
   });
 
   const { toast } = useToast();
 
   const [iconSearchResults, setIconSearchResults] = useState<{value: string, label: string}[]>(DEFAULT_ICONS);
   const [searchLoading, setSearchLoading] = useState(false);
+
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowIconDropdown(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   // Populate form when collection changes
   useEffect(() => {
@@ -79,7 +92,6 @@ export function EditCollectionDialog({
         display_name: collection.display_name ?? '',
         description: collection.description ?? '',
         icon: collection.icon || '📦',
-        color: collection.color || '#3B82F6',
       });
       setSearchIcon('');
       setShowIconDropdown(false);
@@ -126,7 +138,6 @@ export function EditCollectionDialog({
           display_name: formData.display_name,
           description: formData.description,
           icon: formData.icon,
-          color: formData.color,
         }),
       });
 
@@ -156,17 +167,13 @@ export function EditCollectionDialog({
     setSearchIcon('');
   };
 
-  const handleColorChange = (color: string) => {
-    setFormData({ ...formData, color });
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle> </DialogTitle>
           <DialogDescription>
-            Update collection details, icon, and color.
+            Update collection details and icon.
           </DialogDescription>
         </DialogHeader>
 
@@ -207,7 +214,7 @@ export function EditCollectionDialog({
                 {/* Icon Selector */}
                 <div className="space-y-2">
                   <Label>Select Icon</Label>
-                  <div className="relative">
+                  <div className="relative" ref={dropdownRef}>
                     <div 
                       className="flex items-center gap-2 h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background cursor-pointer"
                       onClick={() => setShowIconDropdown(!showIconDropdown)}
@@ -219,8 +226,8 @@ export function EditCollectionDialog({
 
                     {/* Icon Dropdown */}
                     {showIconDropdown && (
-                      <div className="absolute top-full left-0 mt-2 w-72 max-h-80 overflow-y-auto bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-lg shadow-xl z-50">
-                        <div className="p-2 border-b">
+                      <div className="absolute bottom-full left-0 mb-2 w-full max-h-80 overflow-y-auto bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-lg shadow-xl z-50">
+                        <div className="p-2 border-b relative">
                           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400" />
                           <Input
                             autoFocus
@@ -260,26 +267,6 @@ export function EditCollectionDialog({
                         </div>
                       </div>
                     )}
-                  </div>
-                </div>
-
-                {/* Color Picker */}
-                <div className="space-y-2">
-                  <Label>Collection Color</Label>
-                  <div className="flex gap-2 items-center">
-                    <Input
-                      type="color"
-                      value={formData.color}
-                      onChange={(e) => handleColorChange(e.target.value)}
-                      className="w-12 h-10 p-1 cursor-pointer rounded-md"
-                    />
-                    <Input
-                      type="text"
-                      value={formData.color}
-                      onChange={(e) => handleColorChange(e.target.value)}
-                      className="flex-1 font-mono text-sm"
-                      placeholder="#3B82F6"
-                    />
                   </div>
                 </div>
               </div>

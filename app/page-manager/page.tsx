@@ -47,6 +47,8 @@ const PAGES: Array<{ key: string; label: string; description: string }> = [
   { key: 'blogs', label: 'Blogs', description: 'Blogs page sections' },
   { key: 'careers', label: 'Careers', description: 'Careers page sections' },
   { key: 'contact', label: 'Contact', description: 'Contact page sections' },
+  { key: 'events', label: 'Our Events', description: 'Our Events page sections' },
+  { key: 'downloads', label: 'Our Resources', description: 'Our Resources page sections' },
   { key: 'global-presence', label: 'Global Presence', description: 'Global presence page sections' },
   { key: 'industry-solutions', label: 'Industry Solutions', description: 'Industry solutions page sections' },
   { key: 'manufacturing-infrastructure', label: 'Manufacturing Infrastructure', description: 'Manufacturing infrastructure page sections' },

@@ -2,7 +2,7 @@
 
 import React from "react"
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -19,7 +19,6 @@ import { Plus, Search } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { Collection } from '@/lib/types';
 import { IconRenderer } from '@/components/icon-renderer';
-import { useEffect } from 'react';
 
 // Default initial icons to show before searching
 const DEFAULT_ICONS = [
@@ -44,6 +43,10 @@ const DEFAULT_ICONS = [
   { value: 'lucide:monitor', label: 'Computer' },
 ];
 
+interface CreateCollectionDialogProps {
+  onSuccess?: (collection: Collection) => void;
+}
+
 export function CreateCollectionDialog({ onSuccess }: CreateCollectionDialogProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -53,13 +56,26 @@ export function CreateCollectionDialog({ onSuccess }: CreateCollectionDialogProp
     name: '',
     display_name: '',
     description: '',
-    icon: '📦',
-    color: '#3B82F6',
+    icon: '',
   });
   const { toast } = useToast();
 
   const [iconSearchResults, setIconSearchResults] = useState<{value: string, label: string}[]>(DEFAULT_ICONS);
   const [searchLoading, setSearchLoading] = useState(false);
+
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowIconDropdown(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   useEffect(() => {
     if (!searchIcon || searchIcon.length < 2) {
@@ -114,7 +130,6 @@ export function CreateCollectionDialog({ onSuccess }: CreateCollectionDialogProp
         display_name: '',
         description: '',
         icon: '📦',
-        color: '#3B82F6',
       });
       setOpen(false);
       setSearchIcon('');
@@ -141,10 +156,6 @@ export function CreateCollectionDialog({ onSuccess }: CreateCollectionDialogProp
     setFormData({ ...formData, icon });
     setShowIconDropdown(false);
     setSearchIcon('');
-  };
-
-  const handleColorChange = (color: string) => {
-    setFormData({ ...formData, color });
   };
 
   return (
@@ -206,12 +217,10 @@ export function CreateCollectionDialog({ onSuccess }: CreateCollectionDialogProp
           </div>
 
           <div className="space-y-3">
-            <Label>Icon & Color</Label>
-            
             {/* Icon Selector */}
             <div className="relative">
               <Label className="block mb-2 text-sm">Select Icon</Label>
-              <div className="relative">
+              <div className="relative" ref={dropdownRef}>
                 <div 
                   className="flex items-center gap-2 h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background cursor-pointer"
                   onClick={() => setShowIconDropdown(!showIconDropdown)}
@@ -223,9 +232,9 @@ export function CreateCollectionDialog({ onSuccess }: CreateCollectionDialogProp
                 
                 {/* Icon Dropdown */}
                 {showIconDropdown && (
-                  <div className="absolute top-full left-0 mt-2 w-72 max-h-80 overflow-y-auto bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-lg shadow-xl z-50">
+                  <div className="absolute bottom-full left-0 mb-2 w-full max-h-80 overflow-y-auto bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-lg shadow-xl z-50">
                     {/* Search Input in Dropdown */}
-                    <div className="p-2 border-b border-gray-200 dark:border-zinc-700">
+                    <div className="p-2 border-b border-gray-200 dark:border-zinc-700 relative">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400" />
                       <Input
                         autoFocus
@@ -269,45 +278,6 @@ export function CreateCollectionDialog({ onSuccess }: CreateCollectionDialogProp
                     </div>
                   </div>
                 )}
-              </div>
-            </div>
-
-            {/* Color Picker */}
-            <div className="space-y-2">
-              <Label htmlFor="color">Collection Color</Label>
-              <div className="flex gap-2 items-center">
-                <div className="relative">
-                  <Input
-                    id="color"
-                    type="color"
-                    value={formData.color}
-                    onChange={(e) => handleColorChange(e.target.value)}
-                    className="w-12 h-10 p-1 cursor-pointer rounded-md"
-                    title="Select a color"
-                  />
-                  <div className="absolute -bottom-6 left-0 text-[10px] text-gray-500">
-                    {formData.color}
-                  </div>
-                </div>
-                <Input
-                  type="text"
-                  value={formData.color}
-                  onChange={(e) => handleColorChange(e.target.value)}
-                  className="flex-1 font-mono text-sm"
-                  placeholder="#3B82F6"
-                />
-              </div>
-              <div className="flex flex-wrap gap-2 mt-1">
-                {['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#64748B', '#D4AF37'].map((color) => (
-                  <button
-                    key={color}
-                    type="button"
-                    onClick={() => handleColorChange(color)}
-                    className={`w-8 h-8 rounded-full border-2 transition-all ${formData.color === color ? 'border-gray-900 dark:border-white scale-110' : 'border-transparent hover:scale-105'}`}
-                    style={{ backgroundColor: color }}
-                    title={color}
-                  />
-                ))}
               </div>
             </div>
           </div>

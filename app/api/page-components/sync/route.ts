@@ -38,6 +38,13 @@ const LABEL_CORRECTIONS: Record<string, Record<string, string>> = {
     Contact3:   'Contact Form',
     Cta:        'CTA',
   },
+  'events': {
+    EventsSection: 'Events List',
+    Gallery:       'Image Gallery',
+  },
+  'downloads': {
+    DownloadCenter: 'Download Center',
+  },
   'faq': {
     Faq2: 'FAQ Accordion 1',
     Faq3: 'FAQ Accordion 2',
