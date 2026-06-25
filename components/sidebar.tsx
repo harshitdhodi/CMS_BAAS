@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { Loader2, Plus, Database, ChevronRight, ChevronDown, FileText, Folder, FolderPlus, MoreVertical, Trash2, Pencil, Palette, Layout, MapPin, LayoutDashboard, File, Settings, Mail, Send } from 'lucide-react';
+import { Loader2, Plus, Database, ChevronRight, ChevronDown, FileText, Folder, FolderPlus, MoreVertical, Trash2, Pencil, Palette, Layout, MapPin, LayoutDashboard, File, Settings, Mail, Send, Code } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/lib/auth-client';
 import { useSidebar } from '@/components/context/sidebar-context';
@@ -629,6 +629,7 @@ export function Sidebar() {
             {renderSidebarLink("/color-manager", "Color Manager", <IconRenderer icon="ph:palette-fill" className="w-6 h-6 text-gray-500" />, pathname === '/color-manager', 'bg-primary text-black font-medium')}
             {renderSidebarLink("/page-manager", "Page Manager", <IconRenderer icon="ph:file-text-fill" className="w-6 h-6 text-gray-500" />, pathname === '/page-manager')}
             {renderSidebarLink("/calendar", "Calendar", <IconRenderer icon="lucide:calendar" className="w-6 h-6 text-gray-500" />, pathname === '/calendar')}
+            {isSuperadmin && renderSidebarLink("/api-docs", "API Docs", <Code className="w-5 h-5 text-gray-500" />, pathname === '/api-docs')}
             {/* Email & Settings Section */}
             <div className="pt-2 pb-1">
               <p className={cn("px-3 text-xs font-semibold text-foreground/50 uppercase tracking-wider", !isOpen && "text-center")}>
