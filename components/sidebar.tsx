@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { Loader2, Plus, Database, ChevronRight, ChevronDown, FileText, Folder, FolderPlus, MoreVertical, Trash2, Pencil, Palette, Layout, MapPin, LayoutDashboard, File, Settings, Mail, Send, Code } from 'lucide-react';
+import { Loader2, Plus, Database, ChevronRight, ChevronDown, FileText, Folder, FolderPlus, MoreVertical, Trash2, Pencil, Palette, Layout, MapPin, LayoutDashboard, File, Settings, Mail, Send, Code, Shield, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/lib/auth-client';
 import { useSidebar } from '@/components/context/sidebar-context';
@@ -55,7 +55,7 @@ export function Sidebar() {
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [faviconUrl, setFaviconUrl] = useState<string | null>(null);
 
-  const { isSuperadmin } = useAuth();
+  const { isSuperadmin, hasPermission } = useAuth();
   const { isOpen, toggle } = useSidebar();
   const { toast } = useToast();
 
@@ -441,7 +441,7 @@ export function Sidebar() {
 
         {/* Collections List */}
         <div className="flex-1 overflow-y-auto px-3 py-4">
-     {renderSidebarLink("/dashboard", "Dashboard", <LayoutDashboard className="w-5 h-5 text-gray-500" />, pathname === '/dashboard')}
+     {hasPermission('dashboard') && renderSidebarLink("/dashboard", "Dashboard", <LayoutDashboard className="w-5 h-5 text-gray-500" />, pathname === '/dashboard')}
           {loading ? (
             <div className={cn('flex items-center gap-2.5 px-3 py-2.5 text-sm text-primary/70', !isOpen && 'justify-center')}>
               <Loader2 className="w-4 h-4 animate-spin text-primary" />
@@ -457,6 +457,9 @@ export function Sidebar() {
               {/* Render Folders First */}
               {folders.map((folder) => {
                 // Hide manage-meta from folder collections (shown as static "Pages Metadata" link in SEO section)
+                // Non-superadmins only see folders they have explicit permission for
+                if (!isSuperadmin && !hasPermission(`folder:${folder.id}`)) return null;
+
                 const isExpanded = !!expandedItems[folder.id];
                 const isTarget = dropTargetId === folder.id;
                 const folderCollections = collections.filter(c => (c as any).folder_id === folder.id && c.name !== 'manage-meta');
@@ -532,7 +535,7 @@ export function Sidebar() {
                       {isExpanded && (
                         <div className="ml-4 space-y-1 mt-1 border-l border-border/60 pl-2">
                           {folderCollections.map(renderCollectionItem)}
-                          {folder.name.toLowerCase() === 'global presence' && (
+                          {folder.name.toLowerCase() === 'global presence' && hasPermission('global-presence') && (
                             <Link
                               href="/global-presence"
                               className={cn(
@@ -582,7 +585,7 @@ export function Sidebar() {
                               </Link>
                             );
                           })}
-                          {folder.name.toLowerCase() === 'global presence' && (
+                          {folder.name.toLowerCase() === 'global presence' && hasPermission('global-presence') && (
                             <Link
                               href="/global-presence"
                               className={cn(
@@ -626,30 +629,36 @@ export function Sidebar() {
           {/* Static Links */}
           <div className=" border-t border-border/50 space-y-1">
        
-            {renderSidebarLink("/color-manager", "Color Manager", <IconRenderer icon="ph:palette-fill" className="w-6 h-6 text-gray-500" />, pathname === '/color-manager', 'bg-primary text-black font-medium')}
-            {renderSidebarLink("/page-manager", "Page Manager", <IconRenderer icon="ph:file-text-fill" className="w-6 h-6 text-gray-500" />, pathname === '/page-manager')}
-            {renderSidebarLink("/calendar", "Calendar", <IconRenderer icon="lucide:calendar" className="w-6 h-6 text-gray-500" />, pathname === '/calendar')}
-            {isSuperadmin && renderSidebarLink("/api-docs", "API Docs", <Code className="w-5 h-5 text-gray-500" />, pathname === '/api-docs')}
-            {/* Email & Settings Section */}
-            <div className="pt-2 pb-1">
-              <p className={cn("px-3 text-xs font-semibold text-foreground/50 uppercase tracking-wider", !isOpen && "text-center")}>
-                {isOpen ? 'Configuration' : 'Cfg'}
-              </p>
-            </div>
-            {renderSidebarLink("/email-templates", "Email Templates", <IconRenderer icon="ph:envelope-simple-fill" className="w-6 h-6 text-gray-500" />, pathname === '/email-templates')}
-            {renderSidebarLink("/send-email", "Send Email", <IconRenderer icon="ph:paper-plane-right-fill" className="w-6 h-6 text-gray-500" />, pathname === '/send-email')}
-            {renderSidebarLink("/settings", "Global Settings", <IconRenderer icon="ph:gear-fill" className="w-6 h-6 text-gray-500" />, pathname === '/settings')}
+            {hasPermission('color-manager') && renderSidebarLink("/color-manager", "Color Manager", <IconRenderer icon="ph:palette-fill" className="w-6 h-6 text-gray-500" />, pathname === '/color-manager', 'bg-primary text-black font-medium')}
+            {hasPermission('page-manager') && renderSidebarLink("/page-manager", "Page Manager", <IconRenderer icon="ph:file-text-fill" className="w-6 h-6 text-gray-500" />, pathname === '/page-manager')}
+            {hasPermission('calendar') && renderSidebarLink("/calendar", "Calendar", <IconRenderer icon="lucide:calendar" className="w-6 h-6 text-gray-500" />, pathname === '/calendar')}
+            {hasPermission('api-docs') && renderSidebarLink("/api-docs", "API Docs", <Code className="w-5 h-5 text-gray-500" />, pathname === '/api-docs')}
+            {/* Configuration Section — only show heading if user has access to at least one item */}
+            {(hasPermission('email-templates') || hasPermission('send-email') || hasPermission('settings') || isSuperadmin) && (
+              <div className="pt-2 pb-1">
+                <p className={cn("px-3 text-xs font-semibold text-foreground/50 uppercase tracking-wider", !isOpen && "text-center")}>
+                  {isOpen ? 'Configuration' : 'Cfg'}
+                </p>
+              </div>
+            )}
+            {hasPermission('email-templates') && renderSidebarLink("/email-templates", "Email Templates", <IconRenderer icon="ph:envelope-simple-fill" className="w-6 h-6 text-gray-500" />, pathname === '/email-templates')}
+            {hasPermission('send-email') && renderSidebarLink("/send-email", "Send Email", <IconRenderer icon="ph:paper-plane-right-fill" className="w-6 h-6 text-gray-500" />, pathname === '/send-email')}
+            {hasPermission('settings') && renderSidebarLink("/settings", "Global Settings", <IconRenderer icon="ph:gear-fill" className="w-6 h-6 text-gray-500" />, pathname === '/settings')}
+            {isSuperadmin && renderSidebarLink("/role-manager", "Role Manager", <Shield className="w-5 h-5 text-gray-500" />, pathname === '/role-manager')}
+            {isSuperadmin && renderSidebarLink("/user-management", "User Manager", <Users className="w-5 h-5 text-gray-500" />, pathname === '/user-management')}
 
-            {/* SEO Section */}
-            <div className="pt-2 pb-1 border-t border-border/50">
-              <p className={cn("px-3 text-xs font-semibold text-foreground/50 uppercase tracking-wider", !isOpen && "text-center")}>
-                {isOpen ? 'SEO Management' : 'SEO'}
-              </p>
-            </div>
-            {renderSidebarLink("/seo/settings", "SEO Settings", <IconRenderer icon="ph:globe-bold" className="w-6 h-6 text-gray-500" />, pathname.startsWith('/seo/settings'))}
-            {renderSidebarLink("/collections/6a2cd928c7ccfc7bea1e0099?collectionName=manage-meta", "Pages Metadata", <IconRenderer icon="ph:files-bold" className="w-6 h-6 text-gray-500" />, pathname.includes('6a2cd928c7ccfc7bea1e0099'))}
-            {renderSidebarLink("/seo/audit", "SEO Audit", <IconRenderer icon="ph:shield-check-bold" className="w-6 h-6 text-gray-500" />, pathname.startsWith('/seo/audit'))}
-            {renderSidebarLink("/seo/redirects", "Redirects", <IconRenderer icon="ph:arrows-merge-bold" className="w-6 h-6 text-gray-500" />, pathname.startsWith('/seo/redirects'))}
+            {/* SEO Section — only show heading if user has access to at least one SEO item */}
+            {(hasPermission('seo-settings') || hasPermission('pages-metadata') || hasPermission('seo-audit') || hasPermission('redirects')) && (
+              <div className="pt-2 pb-1 border-t border-border/50">
+                <p className={cn("px-3 text-xs font-semibold text-foreground/50 uppercase tracking-wider", !isOpen && "text-center")}>
+                  {isOpen ? 'SEO Management' : 'SEO'}
+                </p>
+              </div>
+            )}
+            {hasPermission('seo-settings') && renderSidebarLink("/seo/settings", "SEO Settings", <IconRenderer icon="ph:globe-bold" className="w-6 h-6 text-gray-500" />, pathname.startsWith('/seo/settings'))}
+            {hasPermission('pages-metadata') && renderSidebarLink("/collections/6a2cd928c7ccfc7bea1e0099?collectionName=manage-meta", "Pages Metadata", <IconRenderer icon="ph:files-bold" className="w-6 h-6 text-gray-500" />, pathname.includes('6a2cd928c7ccfc7bea1e0099'))}
+            {hasPermission('seo-audit') && renderSidebarLink("/seo/audit", "SEO Audit", <IconRenderer icon="ph:shield-check-bold" className="w-6 h-6 text-gray-500" />, pathname.startsWith('/seo/audit'))}
+            {hasPermission('redirects') && renderSidebarLink("/seo/redirects", "Redirects", <IconRenderer icon="ph:arrows-merge-bold" className="w-6 h-6 text-gray-500" />, pathname.startsWith('/seo/redirects'))}
           </div>
         </div>
 

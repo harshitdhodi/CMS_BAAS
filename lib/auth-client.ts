@@ -62,5 +62,15 @@ export function useAuth() {
     window.location.href = '/login';
   }
 
-  return { user, loading, logout, isSuperadmin: user?.role === 'superadmin', isAdmin: user?.role === 'admin' };
+  return { 
+    user, 
+    loading, 
+    logout, 
+    isSuperadmin: user?.role === 'superadmin', 
+    isAdmin: user?.role === 'admin',
+    hasPermission: (permission: string) => {
+      if (user?.role === 'superadmin') return true;
+      return user?.permissions?.includes(permission) || false;
+    }
+  };
 }

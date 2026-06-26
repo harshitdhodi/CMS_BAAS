@@ -97,13 +97,14 @@ export interface CollectionWithFields extends Collection {
 }
 
 // User & Auth Types
-export type UserRole = 'superadmin' | 'admin';
+export type UserRole = 'superadmin' | 'admin' | string; // Dynamic roles
 
 export interface User {
   id: string;
   username: string;
   email: string;
   role: UserRole;
+  role_id?: string; // Reference to roles collection for dynamic roles
   created_at: string;
   updated_at: string;
 }
@@ -118,4 +119,45 @@ export interface SessionUser {
   username: string;
   email: string;
   role: UserRole;
+  role_id?: string;
+  permissions?: string[]; // Array of permission strings
 }
+
+// Role & Permission Types
+export interface Role {
+  id: string;
+  name: string;
+  description?: string;
+  permissions: string[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateRoleRequest {
+  name: string;
+  description?: string;
+  permissions?: string[];
+}
+
+export interface UpdateRoleRequest extends Partial<CreateRoleRequest> {}
+
+// Sidebar Permission Definitions
+export const SIDEBAR_PERMISSIONS = [
+  'dashboard',
+  'collections',
+  'color-manager',
+  'page-manager',
+  'calendar',
+  'api-docs',
+  'email-templates',
+  'send-email',
+  'settings',
+  'seo-settings',
+  'pages-metadata',
+  'seo-audit',
+  'redirects',
+  'global-presence',
+  'folders',
+] as const;
+
+export type SidebarPermission = typeof SIDEBAR_PERMISSIONS[number];

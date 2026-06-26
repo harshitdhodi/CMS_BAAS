@@ -16,7 +16,10 @@ import {
   ChevronRight, 
   UserCheck,
   Send,
-  Loader2
+  Loader2,
+  Sparkles,
+  Lock,
+  ArrowRight,
 } from 'lucide-react';
 
 interface DashboardStats {
@@ -46,7 +49,7 @@ interface DashboardStats {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, isSuperadmin, hasPermission } = useAuth();
   
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -100,6 +103,78 @@ export default function DashboardPage() {
   }
 
   if (!user) return null;
+
+  // Permission check — non-superadmins need the 'dashboard' permission
+  if (!isSuperadmin && !hasPermission('dashboard')) {
+    // Build a list of sections the user CAN access to guide them
+    const accessibleLinks: { label: string; href: string }[] = [];
+    if (hasPermission('collections')) accessibleLinks.push({ label: 'Collections', href: '/' });
+    if (hasPermission('color-manager')) accessibleLinks.push({ label: 'Color Manager', href: '/color-manager' });
+    if (hasPermission('page-manager')) accessibleLinks.push({ label: 'Page Manager', href: '/page-manager' });
+    if (hasPermission('calendar')) accessibleLinks.push({ label: 'Calendar', href: '/calendar' });
+    if (hasPermission('api-docs')) accessibleLinks.push({ label: 'API Docs', href: '/api-docs' });
+    if (hasPermission('email-templates')) accessibleLinks.push({ label: 'Email Templates', href: '/email-templates' });
+    if (hasPermission('send-email')) accessibleLinks.push({ label: 'Send Email', href: '/send-email' });
+    if (hasPermission('settings')) accessibleLinks.push({ label: 'Global Settings', href: '/settings' });
+    if (hasPermission('seo-settings')) accessibleLinks.push({ label: 'SEO Settings', href: '/seo/settings' });
+    if (hasPermission('pages-metadata')) accessibleLinks.push({ label: 'Pages Metadata', href: '/seo/metadata' });
+    if (hasPermission('seo-audit')) accessibleLinks.push({ label: 'SEO Audit', href: '/seo/audit' });
+    if (hasPermission('redirects')) accessibleLinks.push({ label: 'Redirects', href: '/seo/redirects' });
+    if (hasPermission('global-presence')) accessibleLinks.push({ label: 'Global Presence', href: '/global-presence' });
+
+    return (
+      <div className="min-h-[80vh] flex items-center justify-center px-4">
+        <div className="max-w-lg w-full text-center space-y-6">
+          {/* Icon */}
+          <div className="mx-auto w-20 h-20 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+            <Sparkles className="w-10 h-10 text-primary" />
+          </div>
+
+          {/* Greeting */}
+          <div className="space-y-2">
+            <h1 className="text-3xl font-bold text-foreground">
+              Welcome, <span className="text-primary">{user.username}</span>!
+            </h1>
+            <p className="text-muted-foreground text-base">
+              You&apos;re logged in as{' '}
+              <span className="font-semibold capitalize text-foreground">{user.role}</span>.
+              Your account doesn&apos;t have access to the main dashboard.
+            </p>
+          </div>
+
+          {/* Access info */}
+          {accessibleLinks.length > 0 ? (
+            <div className="bg-card border border-border rounded-xl p-5 text-left space-y-3">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                <ArrowRight className="w-3.5 h-3.5" />
+                Sections you have access to
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {accessibleLinks.map((link) => (
+                  <button
+                    key={link.href}
+                    onClick={() => router.push(link.href)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors"
+                  >
+                    {link.label}
+                    <ArrowRight className="w-3 h-3" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="bg-card border border-border rounded-xl p-5 text-center space-y-2">
+              <Lock className="w-8 h-8 mx-auto text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">
+                You don&apos;t have access to any sections yet.<br />
+                Please contact your administrator to get permissions assigned.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   // Format current date
   const formattedDate = new Date().toLocaleDateString('en-US', {
