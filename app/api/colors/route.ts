@@ -228,8 +228,12 @@ export async function GET(request: NextRequest) {
   try {
     if (!existsSync(COLORS_FILE)) {
       return NextResponse.json(
-        { success: false, error: 'Colors file not found' } as ApiResponse<null>,
-        { status: 404 }
+        {
+          success: true,
+          data: { colors: defaultColors, content: '' },
+          message: 'Colors file not found, returning defaults',
+        } as ApiResponse<{ colors: ColorPalette; content: string }>,
+        { status: 200 }
       );
     }
 
