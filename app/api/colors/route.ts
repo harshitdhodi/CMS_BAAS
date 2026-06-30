@@ -6,6 +6,8 @@ import { requireAuth } from '@/lib/auth';
 import { getDb } from '@/lib/db';
 import type { ApiResponse } from '@/lib/types';
 
+export const dynamic = 'force-dynamic';
+
 const COLORS_FILE = join(process.cwd(), '..', 'bexon', 'src', 'app', 'assets', 'sass', 'utilities', '_colors.scss');
 
 // Color palette structure

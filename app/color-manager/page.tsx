@@ -149,7 +149,7 @@ export default function ColorManagerPage() {
   useEffect(() => {
     const loadColors = async () => {
       try {
-        const response = await fetch('/api/colors');
+        const response = await fetch('/api/colors', { cache: 'no-store' });
         if (response.ok) {
           const data = await response.json();
           if (data.success && data.data?.colors) {

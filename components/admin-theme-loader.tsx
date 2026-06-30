@@ -68,7 +68,7 @@ export function AdminThemeLoader() {
     }
 
     // 2. Fallback to API check just in case
-    fetch('/api/colors')
+    fetch('/api/colors', { cache: 'no-store' })
       .then(res => res.json())
       .then(data => {
         if (data && data.success && data.data && data.data.colors) {
